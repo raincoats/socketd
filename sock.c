@@ -18,6 +18,9 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+// chmod
+#include <sys/stat.h>
+
 // http://www.gnu.org/software/libc/manual/html_node/Local-Socket-Example.html#Local-Socket-Example
 int
 make_named_socket (const char *filename)
@@ -114,7 +117,9 @@ int main(int argc , char *argv[])
 	int c = sizeof(struct sockaddr_un);
 	char *sockname = "/var/run/socketd.sock";
 	unlink(sockname);
+
 	int server = make_named_socket(sockname);
+	chmod(sockname, 00666);
 
 	if (listen(server, 3) != 0) {
 		perror("listen");
