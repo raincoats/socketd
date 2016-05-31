@@ -1,0 +1,15 @@
+[Unit]
+Description=socketd
+After=network.target
+
+[Service]
+ExecStart=/sbin/socketd
+Restart=always
+Type=simple
+User=root
+Group=root
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+WorkingDirectory=/
+
+[Install]
+WantedBy=multi-user.target

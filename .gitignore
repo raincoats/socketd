@@ -1,6 +1,7 @@
 /*
 !/.gitignore
 !/sock.c
+!/socketd.service
 !/Makefile
 !/LICENSE.md
 !/README.md
