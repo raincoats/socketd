@@ -164,7 +164,25 @@ int main(int argc , char *argv[])
 			close(client_sock);
 			close(newfd);
 			int *status;
-			waitpid(-1, status, WNOHANG | WCONTINUED | WUNTRACED);
+
+			while (!WIFEXITED(status) && !WIFSIGNALED(status))
+			{
+				int w = waitpid(-1, status, WNOHANG);
+
+				if (w == -1) {
+					perror("waitpid");
+				}
+
+				if (WIFEXITED(status)) {
+					printf("exited, status=%d\n", WEXITSTATUS(status));
+				}else if (WIFSIGNALED(status)) {
+					printf("killed by signal %d\n", WTERMSIG(status));
+				} else if (WIFSTOPPED(status)) {
+					printf("stopped by signal %d\n", WSTOPSIG(status));
+				} else if (WIFCONTINUED(status)) {
+					printf("continued\n");
+				}				
+			}
 		}
 	}
 	close(server);
