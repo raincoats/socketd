@@ -111,7 +111,6 @@ void h4ck_th3_pl4n3t(int client_sock)
 		}
 	}
 	if(read_size == 0){
-		printy("%-20s\n", "client disconnected");
 		fflush(stdout);
 	}
 	else if(read_size == -1){
@@ -145,12 +144,8 @@ int main(int argc , char *argv[])
 		int pid;
 		int newfd = dup(3);
 
-		printy("%-20s is %d\n", "server fd:", server);
-		printy("%-20s is %d\n", "new fd:", newfd);
-
 		int client_sock = accept(newfd, (struct sockaddr *)&newfd,
 			                     (socklen_t *)&c);
-		printy("%-20s is %d\n", "client_sock:", client_sock);
 
 		if((pid = fork()) == -1){
 			perror("fork failed");
@@ -168,10 +163,29 @@ int main(int argc , char *argv[])
 			printy("had a baby named %d\n", pid);
 			close(client_sock);
 			close(newfd);
+			int *status;
+
+			while (!WIFEXITED(status) && !WIFSIGNALED(status))
+			{
+				int w = waitpid(-1, status, WNOHANG);
+
+				if (w == -1) {
+					perror("waitpid");
+				}
+
+				if (WIFEXITED(status)) {
+					printf("exited, status=%d\n", WEXITSTATUS(status));
+				}else if (WIFSIGNALED(status)) {
+					printf("killed by signal %d\n", WTERMSIG(status));
+				} else if (WIFSTOPPED(status)) {
+					printf("stopped by signal %d\n", WSTOPSIG(status));
+				} else if (WIFCONTINUED(status)) {
+					printf("continued\n");
+				}				
+			}
 		}
 	}
 	close(server);
 	unlink(sockname);
-	printy("%-20s\n", "bye bye");
 	return 0;
 }
