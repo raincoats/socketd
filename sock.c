@@ -163,6 +163,8 @@ int main(int argc , char *argv[])
 			printy("had a baby named %d\n", pid);
 			close(client_sock);
 			close(newfd);
+			int *status;
+			waitpid(-1, status, WNOHANG | WCONTINUED | WUNTRACED);
 		}
 	}
 	close(server);
